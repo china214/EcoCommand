@@ -1,0 +1,86 @@
+<!DOCTYPE html>                                                           <!-- Setup -->
+<html lang="en">                                                          <!-- English language -->
+<head>
+  <meta charset="UTF-8">                                                  <!-- REQUIRED FOR ALL WEBSITES!!!-->
+  <meta name="viewport" content="width=device-width, initial-scale=1">    <!-- REQUIRED FOR ALL WEBSITES!!!-->
+  <title>EcoCommand | Data</title>                                        <!--Tab Name-->                                <!-- REQUIRED FOR ALL WEBSITES!!!-->
+  <meta name="description" content="EcoCommand EcoCommand is a smart environmental monitoring and control system designed to monitor indoor and outdoor environments and help maintain safe conditions for food storage and agriculture. The system uses sensors to monitor soil moisture, temperature, and humidity while controlling irrigation and ventilation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;800&family=Instrument+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">                                <!-- REQUIRED FOR ALL WEBSITES!!!-->
+</head>
+<body>
+  <canvas id="cv-bg" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <a class="brand" href="main.html">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#0b62f0" stroke-width="2.5" stroke-linecap="square" aria-hidden="true">
+        <path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/>
+        <circle cx="12" cy="12" r="1.6" fill="#0b62f0" stroke="none"/>
+      </svg>
+      EcoCommand
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="main.html">Home</a></li>
+        <li><a href="data.html" aria-current="page">Data</a></li>
+
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      
+      
+      <div class="hero-inner">
+        <h1>Data</h1>
+        <p class="lede">
+            Paragraph, blah
+        </p>
+        <div class="sensor-card">
+            <h2>Temperature</h2>
+            <p class="sensor-value"><span id="temp">--</span> °C</p>
+        </div>
+
+        <div class="sensor-card">
+            <h2>Humidity</h2>
+            <p class="sensor-value"><span id="hum">--</span> %</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">GCU College of Engineering and Technology</footer>
+
+    <script>
+        async function updateData() {
+            try {
+            const res = await fetch("http://YOUR_PI_IP:5000/data");  // JSON FILE
+            const data = await res.json();
+
+            document.getElementById("temp").innerText = data.temperature_c;
+            document.getElementById("hum").innerText = data.humidity_percent;
+            } catch (err) {
+            console.log("Error fetching data:", err);
+            }
+        }
+
+        setInterval(updateData, 2000);
+        updateData();
+    </script>
+
+
+
+
+
+  <script src="background.js"></script>
+</body>
+</html>
+
+
+
+<!--- 1. (#60) IP Adres of the microcontroller running the Flask server.         --->
+<!--- 2. Microcontroller server needs to send a JSON file with temp and humidity data.        --->
+

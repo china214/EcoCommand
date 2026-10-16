@@ -1,0 +1,228 @@
+/* ---------- Tokens ---------- */
+:root {
+  --bg: #8c0eb3;
+  --surface: #ffffff;
+  --ink: #15222b;
+  --muted: #52636e;
+  --line: rgba(21, 34, 43, 0.16);
+  --blue: #0b62f0;
+  --blue-deep: #0847b3;
+  --radius: 10px;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 1.0625rem/1.6 var(--font-body);
+}
+
+
+h2 {
+  font-family: var(--font-display);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--blue-deep);
+}
+
+:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+
+main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+/* ---------- Header and nav ---------- */
+.site-header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 20px clamp(20px, 5vw, 56px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px 8px 14px;
+  background: rgba(21, 34, 43, 0.08);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #fff;
+  font: 700 1.3rem var(--font-display);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: background-color 0.15s;
+}
+
+.brand:hover {
+  background: #4a46466b;
+}
+
+.site-nav ul {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-nav a {
+  display: block;
+  padding: 8px 16px;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-nav a:hover {
+  background: rgba(21, 34, 43, 0.08);
+}
+
+.site-nav a[aria-current="page"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* ---------- Buttons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  font: 600 1rem var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.btn-primary {
+  background: var(--ink);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn-outline:hover {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* ---------- Home ---------- */
+#cv-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 84px);
+  padding: clamp(24px, 6vw, 72px) clamp(20px, 5vw, 56px) clamp(56px, 10vw, 120px);
+}
+/*text box background*/
+.hero-inner {
+  width: 100%;
+  max-width: 46rem;
+  padding: clamp(28px, 5vw, 52px);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  margin: 0 0 24px;
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.lede {
+  max-width: 34rem;
+  margin: 0 0 32px;
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  line-height: 1.5;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+
+/* ---------- Data ---------- */
+.sensor-card {
+  background: #ffffff10;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  backdrop-filter: blur(6px);
+  border: 1px solid #ffffff20;
+}
+
+.sensor-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #0b62f0;
+}
+
+
+/* ---------- Footer ---------- */
+.site-footer {
+  position: relative;
+  z-index: 1;
+  padding: 24px clamp(20px, 5vw, 56px);
+  color: #fff;
+  font-size: 0.9rem;
+}
