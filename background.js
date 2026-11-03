@@ -1,213 +1,424 @@
+
 /*
-  Background
+  EcoCommand
+  Animated Environmental Monitoring Background
+
+  Visual inspiration:
+  - Temperature and humidity monitoring
+  - IoT sensor networks
+  - Sustainable food storage
+  - Environmental data visualization
 */
+
 (() => {
   const canvas = document.getElementById("cv-bg");
+
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const PALETTE = [
-    { fill: "#0b62f0", text: "#ffffff" },
-    { fill: "#db2a6b", text: "#ffffff" },
-    { fill: "#e8a200", text: "#15222b" },
-    { fill: "#08856a", text: "#ffffff" },
+  if (!ctx) return;
+
+  const reduceMotion = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+  );
+
+  /* ---------- EcoCommand Color Palette ---------- */
+
+  const COLORS = {
+    primary: "#70b982",
+    secondary: "#a8e6b5",
+    accent: "#39875b",
+    line: "rgba(112, 185, 130, 0.16)",
+    grid: "rgba(168, 230, 181, 0.045)",
+    text: "rgba(168, 230, 181, 0.65)",
+  };
+
+  /* ---------- Configuration ---------- */
+
+  const GRID_SIZE = 40;
+  const CONNECTION_DISTANCE = 150;
+
+  const LABELS = [
+    "TEMP  04.2°C",
+    "HUMIDITY  62%",
+    "SHT31 SENSOR",
+    "I²C DATA",
+    "COOLING ACTIVE",
+    "SYSTEM ONLINE",
+    "RASPBERRY PI",
+    "THERMOELECTRIC",
   ];
 
-  // ar = width / height of the object cluster
-  const CLASSES = [
-    { name: "bottle", ar: 0.45 },
-    { name: "shopping bag", ar: 1.3 },
-    { name: "napkin", ar: 1.8 },
-    { name: "plastic fork", ar: 1.1 },
-    { name: "hair clump", ar: 0.9 },
-    { name: "boxes", ar: 2.2 },
-    { name: "soda can", ar: 1 },
-  ];
+  let width = 0;
+  let height = 0;
 
-  const GRID = 32;
-  const MARGIN = 160;
-  const PAD = 10;
+  let particles = [];
 
-  let w = 0;
-  let h = 0;
-  let objects = [];
-  let rafId = null;
-  let last = 0;
+  let animationId = null;
+  let lastFrame = 0;
 
-  const rand = (a, b) => a + Math.random() * (b - a);
-  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  // bell shaped value
-  const bell = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
+  const random = (min, max) =>
+    min + Math.random() * (max - min);
 
-  function makeObject() {
-    const cls = pick(CLASSES);
-    const size = rand(40, 85) * clamp(w / 1200, 0.6, 1);
-    const rx = size * Math.sqrt(cls.ar);
-    const ry = size / Math.sqrt(cls.ar);
-    const count = Math.floor(rand(45, 75));
-    const angle = rand(0, Math.PI * 2);
-    const speed = rand(0.15, 0.5);
+  const clamp = (value, min, max) =>
+    Math.min(max, Math.max(min, value));
 
+  /* ---------- Create Particles ---------- */
+
+  function createParticle() {
     return {
-      cls: cls.name,
-      color: pick(PALETTE),
-      x: rand(0, w),
-      y: rand(0, h),
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed * 0.6,
-      base: rand(0.82, 0.98),
-      phase: rand(0, Math.PI * 2),
-      points: Array.from({ length: count }, () => ({
-        ox: bell() * rx,
-        oy: bell() * ry,
-        ph: rand(0, Math.PI * 2),
-        r: rand(1.2, 2.6),
-      })),
-      box: null,
+      x: random(0, width),
+      y: random(0, height),
+
+      radius: random(1.2, 2.8),
+
+      vx: random(-0.18, 0.18),
+      vy: random(-0.18, 0.18),
+
+      alpha: random(0.25, 0.75),
+
+      phase: random(0, Math.PI * 2),
+
+      label:
+        Math.random() > 0.86
+          ? LABELS[
+              Math.floor(Math.random() * LABELS.length)
+            ]
+          : null,
+
+      labelOffset: random(12, 24),
     };
   }
 
+  /* ---------- Resize Canvas ---------- */
+
   function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    w = window.innerWidth;
-    h = window.innerHeight;
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
+    const dpr = Math.min(
+      window.devicePixelRatio || 1,
+      2
+    );
+
+    width = window.innerWidth;
+    height = window.innerHeight;
+
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const count = clamp(Math.round((w * h) / 110000), 5, 12);
-    objects = Array.from({ length: count }, makeObject);
+    const particleCount = clamp(
+      Math.round((width * height) / 18000),
+      25,
+      90
+    );
+
+    particles = Array.from(
+      { length: particleCount },
+      createParticle
+    );
 
     if (reduceMotion.matches) {
-      step(16, 0);
       draw(0);
     }
   }
 
-  function step(dt, t) {
-    const k = dt / 16.67;
-    const wobble = t * 0.0012;
+  /* ---------- Draw Background Grid ---------- */
 
-    for (const o of objects) {
-      o.x += o.vx * k;
-      o.y += o.vy * k;
+  function drawGrid() {
+    ctx.strokeStyle = COLORS.grid;
+    ctx.lineWidth = 1;
 
-      // Wrap around the screen
-      if (o.x > w + MARGIN) { o.x = -MARGIN; o.box = null; }
-      if (o.x < -MARGIN) { o.x = w + MARGIN; o.box = null; }
-      if (o.y > h + MARGIN) { o.y = -MARGIN; o.box = null; }
-      if (o.y < -MARGIN) { o.y = h + MARGIN; o.box = null; }
+    ctx.beginPath();
 
-      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-      for (const p of o.points) {
-        p.x = o.x + p.ox + Math.sin(wobble + p.ph) * 3;
-        p.y = o.y + p.oy + Math.cos(wobble * 1.1 + p.ph) * 3;
-        if (p.x < x0) x0 = p.x;
-        if (p.y < y0) y0 = p.y;
-        if (p.x > x1) x1 = p.x;
-        if (p.y > y1) y1 = p.y;
+    for (
+      let x = 0;
+      x <= width;
+      x += GRID_SIZE
+    ) {
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+    }
+
+    for (
+      let y = 0;
+      y <= height;
+      y += GRID_SIZE
+    ) {
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+    }
+
+    ctx.stroke();
+  }
+
+  /* ---------- Update Particle Positions ---------- */
+
+  function updateParticles(deltaTime, time) {
+    const speed = deltaTime / 16.67;
+
+    for (const particle of particles) {
+      particle.x += particle.vx * speed;
+      particle.y += particle.vy * speed;
+
+      // Wrap particles around the screen.
+
+      if (particle.x < -10) {
+        particle.x = width + 10;
       }
 
-      const target = { x0: x0 - PAD, y0: y0 - PAD, x1: x1 + PAD, y1: y1 + PAD };
-      if (!o.box) {
-        o.box = target;
-      } else {
-        // box trails the object
-        for (const key of ["x0", "y0", "x1", "y1"]) {
-          o.box[key] += (target[key] - o.box[key]) * 0.12;
+      if (particle.x > width + 10) {
+        particle.x = -10;
+      }
+
+      if (particle.y < -10) {
+        particle.y = height + 10;
+      }
+
+      if (particle.y > height + 10) {
+        particle.y = -10;
+      }
+
+      // Gentle movement inspired by sensor activity.
+
+      particle.alpha =
+        0.35 +
+        Math.sin(
+          time * 0.001 +
+          particle.phase
+        ) * 0.2;
+    }
+  }
+
+  /* ---------- Draw Particle Connections ---------- */
+
+  function drawConnections() {
+    for (let i = 0; i < particles.length; i++) {
+      const particleA = particles[i];
+
+      for (
+        let j = i + 1;
+        j < particles.length;
+        j++
+      ) {
+        const particleB = particles[j];
+
+        const dx = particleA.x - particleB.x;
+        const dy = particleA.y - particleB.y;
+
+        const distance = Math.sqrt(
+          dx * dx + dy * dy
+        );
+
+        if (distance < CONNECTION_DISTANCE) {
+          const opacity =
+            (1 - distance / CONNECTION_DISTANCE) *
+            0.18;
+
+          ctx.strokeStyle =
+            `rgba(112, 185, 130, ${opacity})`;
+
+          ctx.lineWidth = 0.8;
+
+          ctx.beginPath();
+
+          ctx.moveTo(
+            particleA.x,
+            particleA.y
+          );
+
+          ctx.lineTo(
+            particleB.x,
+            particleB.y
+          );
+
+          ctx.stroke();
         }
       }
     }
   }
 
-  function drawGrid() {
-    ctx.fillStyle = "rgba(21, 34, 43, 0.12)";
-    for (let x = GRID / 2; x < w; x += GRID) {
-      for (let y = GRID / 2; y < h; y += GRID) {
-        ctx.fillRect(x - 0.75, y - 0.75, 1.5, 1.5);
+  /* ---------- Draw Particles ---------- */
+
+  function drawParticles(time) {
+    for (const particle of particles) {
+      const pulse =
+        1 +
+        Math.sin(
+          time * 0.0015 +
+          particle.phase
+        ) * 0.25;
+
+      const radius =
+        particle.radius * pulse;
+
+      // Soft glow around each sensor point.
+
+      ctx.beginPath();
+
+      ctx.arc(
+        particle.x,
+        particle.y,
+        radius * 3,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.fillStyle =
+        `rgba(112, 185, 130, ${particle.alpha * 0.08})`;
+
+      ctx.fill();
+
+      // Main particle.
+
+      ctx.beginPath();
+
+      ctx.arc(
+        particle.x,
+        particle.y,
+        radius,
+        0,
+        Math.PI * 2
+      );
+
+      ctx.fillStyle = COLORS.primary;
+      ctx.globalAlpha = particle.alpha;
+
+      ctx.fill();
+
+      ctx.globalAlpha = 1;
+
+      // Occasional environmental data labels.
+
+      if (particle.label) {
+        drawLabel(particle, time);
       }
     }
   }
 
-  function drawBox(o, t) {
-    const b = o.box;
-    if (!b) return;
+  /* ---------- Draw Sensor Data Labels ---------- */
 
-    const conf = clamp(o.base + Math.sin(t * 0.0009 + o.phase) * 0.03, 0.5, 0.99);
-    const c = o.color;
+  function drawLabel(particle, time) {
+    const float =
+      Math.sin(
+        time * 0.0008 +
+        particle.phase
+      ) * 4;
 
-    ctx.strokeStyle = c.fill;
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(b.x0, b.y0, b.x1 - b.x0, b.y1 - b.y0);
+    const x = particle.x + particle.labelOffset;
+    const y = particle.y + float;
 
-    // Heavier corner brackets
-    const len = Math.min(14, (b.x1 - b.x0) / 3, (b.y1 - b.y0) / 3);
-    ctx.lineWidth = 3;
+    ctx.font =
+      '10px "SFMono-Regular", Consolas, monospace';
+
+    ctx.fillStyle = COLORS.text;
+
+    ctx.fillText(
+      particle.label,
+      x,
+      y
+    );
+
+    // Small indicator beside the label.
+
     ctx.beginPath();
-    ctx.moveTo(b.x0, b.y0 + len); ctx.lineTo(b.x0, b.y0); ctx.lineTo(b.x0 + len, b.y0);
-    ctx.moveTo(b.x1 - len, b.y0); ctx.lineTo(b.x1, b.y0); ctx.lineTo(b.x1, b.y0 + len);
-    ctx.moveTo(b.x1, b.y1 - len); ctx.lineTo(b.x1, b.y1); ctx.lineTo(b.x1 - len, b.y1);
-    ctx.moveTo(b.x0 + len, b.y1); ctx.lineTo(b.x0, b.y1); ctx.lineTo(b.x0, b.y1 - len);
-    ctx.stroke();
 
-    // Label tag
-    const text = `${o.cls} ${conf.toFixed(2)}`;
-    ctx.font = '600 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
-    const tw = ctx.measureText(text).width + 10;
-    const th = 18;
-    const ly = b.y0 - th < 0 ? b.y0 : b.y0 - th;
-    ctx.fillStyle = c.fill;
-    ctx.fillRect(b.x0, ly, tw, th);
-    ctx.fillStyle = c.text;
-    ctx.fillText(text, b.x0 + 5, ly + 13);
+    ctx.arc(
+      x - 6,
+      y - 3,
+      1.5,
+      0,
+      Math.PI * 2
+    );
+
+    ctx.fillStyle = COLORS.secondary;
+
+    ctx.fill();
   }
 
-  function draw(t) {
-    ctx.clearRect(0, 0, w, h);
+  /* ---------- Draw Everything ---------- */
+
+  function draw(time) {
+    ctx.clearRect(
+      0,
+      0,
+      width,
+      height
+    );
+
     drawGrid();
 
-    for (const o of objects) {
-      ctx.fillStyle = o.color.fill;
-      ctx.globalAlpha = 0.55;
-      for (const p of o.points) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-      drawBox(o, t);
-    }
+    drawConnections();
+
+    drawParticles(time);
   }
 
-  function frame(now) {
-    const dt = Math.min(50, now - last || 16);
-    last = now;
-    step(dt, now);
-    draw(now);
-    rafId = requestAnimationFrame(frame);
+  /* ---------- Animation Loop ---------- */
+
+  function animate(time) {
+    const deltaTime = Math.min(
+      50,
+      time - lastFrame || 16
+    );
+
+    lastFrame = time;
+
+    updateParticles(
+      deltaTime,
+      time
+    );
+
+    draw(time);
+
+    animationId =
+      requestAnimationFrame(animate);
   }
+
+  /* ---------- Start Animation ---------- */
 
   function start() {
-    cancelAnimationFrame(rafId);
+    cancelAnimationFrame(animationId);
+
     if (reduceMotion.matches) {
-      step(16, 0);
       draw(0);
       return;
     }
-    last = 0;
-    rafId = requestAnimationFrame(frame);
+
+    lastFrame = 0;
+
+    animationId =
+      requestAnimationFrame(animate);
   }
 
-  window.addEventListener("resize", resize);
-  reduceMotion.addEventListener("change", start);
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) cancelAnimationFrame(rafId);
-    else start();
-  });
+  /* ---------- Event Listeners ---------- */
+
+  window.addEventListener(
+    "resize",
+    resize
+  );
+
+  reduceMotion.addEventListener(
+    "change",
+    start
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationId);
+      } else {
+        start();
+      }
+    }
+  );
+
+  /* ---------- Initialize ---------- */
 
   resize();
+
   start();
 })();
